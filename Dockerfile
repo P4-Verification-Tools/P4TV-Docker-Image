@@ -3,8 +3,7 @@
 
 # Pin specific commits for reproducibility
 ARG TRANSLATOR_REPO=https://github.com/NV-ThuFV/P4LTL-Translator.git
-ARG TRANSLATOR_BRANCH=CPI
-ARG TRANSLATOR_COMMIT=47c7cd21278e410e76f35d6e65026d5a51af2499
+ARG TRANSLATOR_COMMIT=8b2c71e8cce5e6af794fbabbb34a62570201a902
 ARG VALIDATOR_REPO=https://github.com/NV-ThuFV/P4LTL-Validator.git
 ARG VALIDATOR_COMMIT=4c82b3b562c27e61783c7b23f3ef785cd01aa25b
 
@@ -14,7 +13,6 @@ ARG VALIDATOR_COMMIT=4c82b3b562c27e61783c7b23f3ef785cd01aa25b
 FROM ubuntu:20.04 AS translator-builder
 
 ARG TRANSLATOR_REPO
-ARG TRANSLATOR_BRANCH
 ARG TRANSLATOR_COMMIT
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -41,9 +39,9 @@ RUN git clone --depth 1 --branch v3.6.1 https://github.com/protocolbuffers/proto
     && ldconfig \
     && cd .. && rm -rf protobuf
 
-# Clone and build P4LTL-Translator at specific branch/commit
+# Clone and build P4LTL-Translator at specific commit
 WORKDIR /
-RUN git clone --recursive --branch ${TRANSLATOR_BRANCH} ${TRANSLATOR_REPO} /p4ltl-translator \
+RUN git clone --recursive ${TRANSLATOR_REPO} /p4ltl-translator \
     && cd /p4ltl-translator \
     && git checkout ${TRANSLATOR_COMMIT} \
     && git submodule update --init --recursive
