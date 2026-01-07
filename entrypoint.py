@@ -64,8 +64,8 @@ def main():
             translate_output = translate_result.stdout + translate_result.stderr
         except subprocess.TimeoutExpired:
             elapsed_ms = int((time.time() - start_time) * 1000)
-            print(json.dumps({"verdict": "error", "time_ms": elapsed_ms, "details": "Translation timeout"}))
-            sys.exit(1)
+            print(json.dumps({"verdict": "timeout", "time_ms": elapsed_ms, "details": "Translation P4 + P4LTL to Boogie timeout"}))
+            sys.exit(0)
         except Exception as e:
             elapsed_ms = int((time.time() - start_time) * 1000)
             print(json.dumps({"verdict": "error", "time_ms": elapsed_ms, "details": f"Translation error: {e}"}))
@@ -91,9 +91,14 @@ def main():
             )
             verify_output = verify_result.stdout + verify_result.stderr
             timed_out = False
-        except subprocess.TimeoutExpired as e:
-            verify_output = (e.stdout or "") + (e.stderr or "") + f"\nTimeout after {timeout}s"
-            timed_out = True
+        except subprocess.TimeoutExpired:
+            elapsed_ms = int((time.time() - start_time) * 1000)
+            print(json.dumps({
+                "verdict": "timeout",
+                "time_ms": elapsed_ms,
+                "details": f"Verification timeout after {timeout}s"
+            }))
+            sys.exit(0)
 
         elapsed_ms = int((time.time() - start_time) * 1000)
 
