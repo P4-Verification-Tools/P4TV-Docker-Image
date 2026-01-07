@@ -10,13 +10,33 @@ import tempfile
 import time
 
 def main():
-    if len(sys.argv) < 3:
-        print(json.dumps({"error": "Usage: p4tv <p4_file> <p4ltl_file>", "verdict": "error"}), file=sys.stderr)
+    if len(sys.argv) < 2:
+        print(json.dumps({
+            "error": "Usage: entrypoint.py <json_payload>",
+            "verdict": "error"
+        }), file=sys.stderr)
         sys.exit(1)
 
-    p4_file = sys.argv[1]
-    p4ltl_file = sys.argv[2]
-    timeout = int(sys.argv[3]) if len(sys.argv) > 3 else 300
+    try:
+        input_data = json.loads(sys.argv[1])
+    except json.JSONDecodeError as e:
+        print(json.dumps({
+            "error": f"Invalid JSON input: {e}",
+            "verdict": "error"
+        }), file=sys.stderr)
+        sys.exit(1)
+
+    files = input_data.get("files", [])
+    if len(files) < 2:
+        print(json.dumps({
+            "error": "P4 and P4LTL files must be provided in JSON payload",
+            "verdict": "error"
+        }))
+        sys.exit(1)
+
+    p4_file = files[0]
+    p4ltl_file = files[1]
+    timeout = input_data.get("timeout", 300)
 
     # Validate input files
     if not os.path.isfile(p4_file):
