@@ -59,7 +59,7 @@ def main():
                 ["/p4tv/bin/p4c-translator", p4_file, "--ua2", "--p4ltl", p4ltl_file, "-o", boogie_file],
                 capture_output=True,
                 text=True,
-                timeout=60
+                timeout=30
             )
             translate_output = translate_result.stdout + translate_result.stderr
         except subprocess.TimeoutExpired:
@@ -103,12 +103,15 @@ def main():
         elapsed_ms = int((time.time() - start_time) * 1000)
 
         # Parse verdict (patterns from Ultimate.py)
-        if re.search(r"AllSpecificationsHoldResult|LTLPropertyHoldsResult|Termination proven", verify_output, re.IGNORECASE):
+        # Check for errors FIRST (before true/false)
+        if re.search(r"TypeErrorResult|SyntaxErrorResult|could not prove|ExceptionOrErrorResult|UnsupportedSyntaxResult", verify_output, re.IGNORECASE):
+            verdict = "error"
+        elif re.search(r"AllSpecificationsHoldResult|LTLPropertyHoldsResult|Termination proven", verify_output, re.IGNORECASE):
             verdict = "true"
-        elif re.search(r"CounterExampleResult|LTLPropertyNotHoldResult|violation|counterexample", verify_output, re.IGNORECASE):
+        elif re.search(r"CounterExampleResult|LTLPropertyNotHoldResult", verify_output, re.IGNORECASE):
             verdict = "false"
         elif timed_out:
-            verdict = "unknown"
+            verdict = "timeout"
         else:
             verdict = "unknown"
 
