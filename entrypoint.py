@@ -118,9 +118,40 @@ def main():
         # Extract counterexample if present
         counterexample = None
         if verdict == "false":
-            ce_match = re.search(r"(counterexample|Trace|TRACE).*?(End of trace|---|\Z)", verify_output, re.IGNORECASE | re.DOTALL)
-            if ce_match:
-                counterexample = ce_match.group(0)[:2000]
+            # Look for the lasso trace format (Stem/Loop sections)
+            # This captures the actual execution trace which shows concrete steps
+            lasso_match = re.search(
+                r"(Stem:|We found a lasso-shaped).*?(End of lasso representation\.?|RESULT:)",
+                verify_output,
+                re.DOTALL
+            )
+            if lasso_match:
+                raw_trace = lasso_match.group(0)
+                # Clean up the trace to show only the relevant execution steps
+                # Extract lines that look like trace statements: [Lxxx] TYPE statement
+                trace_lines = []
+                current_section = None
+                for line in raw_trace.split("\n"):
+                    line = line.strip()
+                    if line == "Stem:" or line.startswith("Stem: "):
+                        if current_section != "Stem":
+                            current_section = "Stem"
+                            trace_lines.append("=== STEM (initial path) ===")
+                    elif line == "Loop:" or line.startswith("Loop: "):
+                        if current_section != "Loop":
+                            current_section = "Loop"
+                            trace_lines.append("=== LOOP (repeating path) ===")
+                    elif re.match(r"\[L\d+\]", line):
+                        # This is an actual trace statement
+                        trace_lines.append(line)
+                    elif "End of lasso representation" in line:
+                        break
+                
+                if trace_lines:
+                    counterexample = "\n".join(trace_lines)
+                else:
+                    # Fallback: just use the raw trace (truncated)
+                    counterexample = raw_trace[:5000]
 
         # Build result
         result = {
